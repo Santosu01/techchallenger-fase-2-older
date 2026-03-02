@@ -1,69 +1,47 @@
-version: '3.8'
+name: togglemaster
+# root docker-compose.yml (Full Stack Orchestration)
 
+networks:
+  auth-db-net:
+  flag-db-net:
+  targeting-db-net:
+  infra-net:
+  service-backbone:
+  togglemaster-network:
+    driver: bridge
+
+include:
+  - docker-compose.infra.yml
+  - auth-service/docker-compose.yml
+  - flag-service/docker-compose.yml
+  - targeting-service/docker-compose.yml
+  - evaluation-service/docker-compose.yml
+  - analytics-service/docker-compose.yml
+
+# Expose databases to host only in full stack mode to avoid standalone conflicts
 services:
-  auth-db:
-    image: postgres:15-alpine
-    container_name: auth-db
-    environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+  auth-postgres:
     ports:
       - "5432:5432"
-    volumes:
-      - ./auth-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d auth_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  flag-postgres:
+    ports:
+      - "5433:5432"
+  targeting-postgres:
+    ports:
+      - "5434:5432"
 
   auth-app:
-    build:
-      context: ./auth-service
-    container_name: auth-app
-    depends_on:
-      auth-db:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: "postgres://user:password@auth-db:5432/auth_db"
-      PORT: "8001"
-      MASTER_KEY: "admin-secreto-123"
     ports:
       - "8001:8001"
-
   flag-app:
-    build:
-      context: ./flag-service
-    container_name: flag-app
-    depends_on:
-      auth-db:
-        condition: service_healthy
-      auth-app:
-        condition: service_started
-    environment:
-      DATABASE_URL: "postgres://user:password@auth-db:5432/auth_db"
-      PORT: "8002"
-      AUTH_SERVICE_URL: "http://auth-app:8001"
     ports:
       - "8002:8002"
-
   targeting-app:
-    build:
-      context: ./targeting-service
-    container_name: targeting-app
-    depends_on:
-      auth-db:
-        condition: service_healthy
-      auth-app:
-        condition: service_started
-    environment:
-      DATABASE_URL: "postgres://user:password@auth-db:5432/auth_db"
-      PORT: "8003"
-      AUTH_SERVICE_URL: "http://auth-app:8001"
     ports:
       - "8003:8003"
-
-volumes:
-  postgres_data:
+  evaluation-app:
+    ports:
+      - "8004:8004"
+  analytics-app:
+    ports:
+      - "8006:8006"
