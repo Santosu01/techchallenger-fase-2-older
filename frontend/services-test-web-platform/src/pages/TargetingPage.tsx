@@ -12,6 +12,9 @@ import FormField from '../components/form/FormField';
 import Select from '../components/form/Select';
 import Button from '../components/ui/Button';
 
+import { useSystemStatus } from '../hooks/useSystemStatus';
+import { ServiceStatusBadge } from '../components/ServiceStatusBadge';
+
 const targetingSchema = z.object({
   flag_name: z.string().min(1, 'Selecione uma flag'),
   rule_type: z.string().min(1, 'Selecione o tipo de regra'),
@@ -32,6 +35,7 @@ const TargetingPage: React.FC = () => {
   } = useTargeting();
   const { flags } = useFlags();
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirm();
+  const { status } = useSystemStatus();
 
   const {
     register,
@@ -88,11 +92,17 @@ const TargetingPage: React.FC = () => {
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-700">
       <header>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30 text-pink-500">
-            <Target className="w-6 h-6" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30 text-pink-500">
+              <Target className="w-6 h-6" />
+            </div>
+            <h2 className="text-3xl font-extrabold italic">Targeting Rules Service</h2>
           </div>
-          <h2 className="text-3xl font-extrabold italic">Targeting Rules Service</h2>
+          <ServiceStatusBadge
+            status={status.targeting}
+            className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5"
+          />
         </div>
         <p className="text-text-secondary max-w-3xl leading-relaxed">
           Defina regras de segmentação granular. Determine quem vê o quê através de rollouts
@@ -177,39 +187,46 @@ const TargetingPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {rules.map((rule) => (
-                  <tr key={rule.id} className="hover:bg-white/2.5 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="font-bold text-white text-sm">{rule.flag_name}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="bg-blue-500/10 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-500/20 italic">
-                        {rule.rule_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-white/5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-pink-500"
-                            style={{ width: `${rule.rollout_percent}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-mono text-text-secondary">
-                          {rule.rollout_percent}%
+                {rules.map((rule) => {
+                  // O backend retorna 'rules' como um objeto JSONB.
+                  // Precisamos extrair 'type' e 'rollout_percent' de dentro dele.
+                  const ruleData =
+                    typeof rule.rules === 'string' ? JSON.parse(rule.rules) : rule.rules;
+
+                  return (
+                    <tr key={rule.flag_name} className="hover:bg-white/2.5 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-white text-sm">{rule.flag_name}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-blue-500/10 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-500/20 italic">
+                          {ruleData?.type || 'rollout'}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleDelete(rule.id)}
-                        className="p-2 hover:bg-rose-500/10 rounded-lg text-text-secondary hover:text-rose-500 transition-all font-bold"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-pink-500"
+                              style={{ width: `${ruleData?.rollout_percent ?? 100}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-mono text-text-secondary">
+                            {ruleData?.rollout_percent ?? 100}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => handleDelete(rule.flag_name as unknown as number)}
+                          className="p-2 hover:bg-rose-500/10 rounded-lg text-text-secondary hover:text-rose-500 transition-all font-bold"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {rules.length === 0 && !isLoadingRules && (

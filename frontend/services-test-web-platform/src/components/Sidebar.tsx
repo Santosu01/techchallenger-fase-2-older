@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useSystemStatus } from '../hooks/useSystemStatus';
+import { useAuthContext } from '../context/useAuthContext';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -23,6 +25,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { status, isAllUp, someDown } = useSystemStatus();
+  const { activeApiKey, setActiveApiKey } = useAuthContext();
+
   const menuItems = [
     { title: 'Dashboard', path: '/', icon: LayoutDashboard },
     { title: 'Authentication', path: '/auth', icon: Key },
@@ -65,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-2">
+        <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
           {menuItems.map((item) => (
             <NavLink
               key={item.path}
@@ -90,13 +95,75 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        <div className="mt-auto p-4 glass rounded-2xl border border-glass-border">
-          <div className="text-[10px] text-text-secondary uppercase tracking-widest font-bold mb-1">
+        {/* API Key Management */}
+        <div className="mt-8 mb-6 p-4 glass rounded-2xl border border-blue-500/20 bg-blue-500/5">
+          <label className="text-[10px] text-blue-400 uppercase tracking-widest font-bold mb-2 block">
+            Active API Key
+          </label>
+          <div className="relative">
+            <input
+              type="password"
+              value={activeApiKey || ''}
+              onChange={(e) => setActiveApiKey(e.target.value || null)}
+              placeholder="Nenhuma chave ativa"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-blue-300 placeholder:text-white/20 focus:outline-none focus:border-blue-500/50 transition-colors"
+            />
+            <Key className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-blue-500/50" />
+          </div>
+          <p className="mt-2 text-[9px] text-text-secondary leading-tight italic">
+            Esta chave autentica todas as chamadas de serviço.
+          </p>
+        </div>
+
+        <div className="p-4 glass rounded-2xl border border-glass-border">
+          <div className="text-[10px] text-text-secondary uppercase tracking-widest font-bold mb-3">
             Status do Sistema
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-medium">Todos os serviços OK</span>
+
+          <div className="space-y-3">
+            {Object.entries(status).map(([service, state]) => (
+              <div key={service} className="flex items-center justify-between group/status">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      'w-1.5 h-1.5 rounded-full transition-shadow duration-300',
+                      state === 'up' && 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]',
+                      state === 'down' && 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]',
+                      state === 'checking' && 'bg-amber-500 animate-pulse'
+                    )}
+                  />
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-text-secondary group-hover/status:text-text-primary transition-colors text-ellipsis overflow-hidden whitespace-nowrap max-w-[80px]">
+                    {service}
+                  </span>
+                </div>
+                <span
+                  className={cn(
+                    'text-[9px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-tighter',
+                    state === 'up' && 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5',
+                    state === 'down' && 'text-rose-500 border-rose-500/20 bg-rose-500/5',
+                    state === 'checking' && 'text-amber-500 border-amber-500/20 bg-amber-500/5'
+                  )}
+                >
+                  {state}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-glass-border flex items-center gap-2">
+            <div
+              className={cn(
+                'w-2 h-2 rounded-full',
+                isAllUp
+                  ? 'bg-emerald-500 animate-pulse'
+                  : someDown
+                    ? 'bg-rose-500'
+                    : 'bg-amber-500 animate-pulse'
+              )}
+            />
+            <span className="text-[11px] font-semibold text-ellipsis overflow-hidden whitespace-nowrap">
+              {isAllUp ? 'Sistemas OK' : someDown ? 'Instabilidade' : 'Verificando...'}
+            </span>
           </div>
         </div>
       </aside>

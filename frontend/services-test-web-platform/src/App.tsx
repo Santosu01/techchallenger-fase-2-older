@@ -8,21 +8,25 @@ import TargetingPage from './pages/TargetingPage';
 import EvaluationPage from './pages/EvaluationPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 
+import { AuthProvider } from './context/AuthContext';
+
 function App() {
   return (
-    <Router>
-      <Toaster position="top-right" richColors theme="dark" />
-      <Layout>
-        <Routes>
-          <Route path="/" element={<HomeLoader />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/flags" element={<FlagPage />} />
-          <Route path="/targeting" element={<TargetingPage />} />
-          <Route path="/evaluation" element={<EvaluationPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Toaster position="top-right" richColors theme="dark" />
+        <Layout>
+          <Routes>
+            <Route path="/" element={<HomeLoader />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/flags" element={<FlagPage />} />
+            <Route path="/targeting" element={<TargetingPage />} />
+            <Route path="/evaluation" element={<EvaluationPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </AuthProvider>
   );
 }
 

@@ -11,6 +11,9 @@ import Input from '../components/form/Input';
 import Textarea from '../components/form/Textarea';
 import Button from '../components/ui/Button';
 
+import { useSystemStatus } from '../hooks/useSystemStatus';
+import { ServiceStatusBadge } from '../components/ServiceStatusBadge';
+
 const flagSchema = z.object({
   name: z
     .string()
@@ -25,6 +28,7 @@ type FlagFormData = z.infer<typeof flagSchema>;
 const FlagPage: React.FC = () => {
   const { flags, isLoading, error, createFlag, isCreating, toggleFlag, deleteFlag } = useFlags();
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirm();
+  const { status } = useSystemStatus();
 
   const {
     register,
@@ -43,15 +47,16 @@ const FlagPage: React.FC = () => {
     await createFlag({
       name: data.name,
       description: data.description || '',
+      is_enabled: true,
     });
     reset();
   };
 
-  const handleToggle = (id: number, currentStatus: boolean) => {
-    toggleFlag({ id, is_active: !currentStatus });
+  const handleToggle = (name: string, currentStatus: boolean) => {
+    toggleFlag({ name, isEnabled: !currentStatus });
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (name: string) => {
     const isConfirmed = await confirm({
       title: 'Excluir Flag',
       message: 'Tem certeza que deseja remover esta flag? Esta ação não pode ser desfeita.',
@@ -61,17 +66,23 @@ const FlagPage: React.FC = () => {
 
     if (!isConfirmed) return;
 
-    await deleteFlag(id);
+    await deleteFlag(name);
   };
 
   return (
     <div className="space-y-8">
       <header>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 text-purple-500">
-            <Flag className="w-6 h-6" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 text-purple-500">
+              <Flag className="w-6 h-6" />
+            </div>
+            <h2 className="text-3xl font-extrabold italic">Feature Flag Service</h2>
           </div>
-          <h2 className="text-3xl font-extrabold italic">Feature Flag Service</h2>
+          <ServiceStatusBadge
+            status={status.flag}
+            className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5"
+          />
         </div>
         <p className="text-text-secondary max-w-3xl leading-relaxed">
           O serviço de Flags permite que você gerencie o ciclo de vida de funcionalidades em tempo
@@ -157,11 +168,11 @@ const FlagPage: React.FC = () => {
                     </p>
                   </div>
                   <button
-                    onClick={() => handleToggle(flag.id, flag.is_active)}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 relative ${flag.is_active ? 'bg-purple-500' : 'bg-white/10'}`}
+                    onClick={() => handleToggle(flag.name, flag.is_enabled)}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 relative ${flag.is_enabled ? 'bg-purple-500' : 'bg-white/10'}`}
                   >
                     <div
-                      className={`w-4 h-4 bg-white rounded-full transition-transform duration-300 ${flag.is_active ? 'translate-x-6' : 'translate-x-0'}`}
+                      className={`w-4 h-4 bg-white rounded-full transition-transform duration-300 ${flag.is_enabled ? 'translate-x-6' : 'translate-x-0'}`}
                     />
                   </button>
                 </div>
@@ -169,14 +180,14 @@ const FlagPage: React.FC = () => {
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-1.5">
                     <div
-                      className={`w-1.5 h-1.5 rounded-full ${flag.is_active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-white/30'}`}
+                      className={`w-1.5 h-1.5 rounded-full ${flag.is_enabled ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-white/30'}`}
                     />
                     <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">
-                      {flag.is_active ? 'Ativa' : 'Inativa'}
+                      {flag.is_enabled ? 'Ativa' : 'Inativa'}
                     </span>
                   </div>
                   <button
-                    onClick={() => handleDelete(flag.id)}
+                    onClick={() => handleDelete(flag.name)}
                     className="p-2 hover:bg-rose-500/10 rounded-lg text-text-secondary hover:text-rose-500 transition-all"
                   >
                     <Trash2 className="w-4 h-4" />

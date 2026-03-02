@@ -9,6 +9,8 @@ import {
   ArrowRight,
   type LucideProps,
 } from 'lucide-react';
+import { useSystemStatus, type ServiceStatus } from '../hooks/useSystemStatus';
+import { ServiceStatusBadge } from '../components/ServiceStatusBadge';
 
 const ServiceCard: React.FC<{
   title: string;
@@ -16,22 +18,26 @@ const ServiceCard: React.FC<{
   icon: React.ComponentType<LucideProps>;
   path: string;
   color: string;
-}> = ({ title, description, icon: Icon, path, color }) => {
+  status: ServiceStatus;
+}> = ({ title, description, icon: Icon, path, color, status }) => {
   const navigate = useNavigate();
 
   return (
     <div
       onClick={() => navigate(path)}
-      className="glass rounded-3xl p-8 border border-glass-border hover:border-accent-primary/50 transition-all duration-500 cursor-pointer group relative overflow-hidden"
+      className="glass rounded-3xl p-8 border border-glass-border hover:border-accent-primary/50 transition-all duration-500 cursor-pointer group relative overflow-hidden flex flex-col h-full"
     >
-      <div
-        className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-500`}
-      >
-        <Icon className="text-white w-7 h-7" />
+      <div className="flex justify-between items-start mb-6">
+        <div
+          className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}
+        >
+          <Icon className="text-white w-7 h-7" />
+        </div>
+        <ServiceStatusBadge status={status} />
       </div>
 
       <h3 className="text-xl font-bold mb-3">{title}</h3>
-      <p className="text-text-secondary text-sm leading-relaxed mb-6">{description}</p>
+      <p className="text-text-secondary text-sm leading-relaxed mb-6 flex-1">{description}</p>
 
       <div className="flex items-center gap-2 text-accent-primary font-semibold text-sm group-hover:gap-3 transition-all">
         Acessar Serviço <ArrowRight className="w-4 h-4" />
@@ -45,8 +51,11 @@ const ServiceCard: React.FC<{
 };
 
 const Home: React.FC = () => {
+  const { status } = useSystemStatus();
+
   const services = [
     {
+      id: 'auth' as const,
       title: 'Authentication',
       description:
         'Gerencie chaves de API e controle o acesso aos seus microsserviços com segurança centralizada.',
@@ -55,6 +64,7 @@ const Home: React.FC = () => {
       color: 'bg-blue-500',
     },
     {
+      id: 'flag' as const,
       title: 'Feature Flags',
       description:
         'Crie e gerencie flags de funcionalidade em tempo real. Ative ou desative recursos sem deploy.',
@@ -63,6 +73,7 @@ const Home: React.FC = () => {
       color: 'bg-purple-500',
     },
     {
+      id: 'targeting' as const,
       title: 'Targeting Rules',
       description:
         'Defina regras avançadas de segmentação, como rollout percentual para seus usuários.',
@@ -71,6 +82,7 @@ const Home: React.FC = () => {
       color: 'bg-pink-500',
     },
     {
+      id: 'evaluation' as const,
       title: 'Evaluation API',
       description:
         'O "Hot Path" do sistema. Teste o endpoint de alta performance otimizado com Redis.',
@@ -79,6 +91,7 @@ const Home: React.FC = () => {
       color: 'bg-emerald-500',
     },
     {
+      id: 'analytics' as const,
       title: 'Analytics Worker',
       description:
         'Monitore o processamento de eventos via SQS e a persistência de dados no DynamoDB.',
@@ -102,7 +115,7 @@ const Home: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {services.map((service) => (
-          <ServiceCard key={service.path} {...service} />
+          <ServiceCard key={service.path} {...service} status={status[service.id]} />
         ))}
       </div>
 

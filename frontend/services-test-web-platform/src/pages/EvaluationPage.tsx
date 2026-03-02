@@ -8,6 +8,9 @@ import FormField from '../components/form/FormField';
 import Input from '../components/form/Input';
 import Button from '../components/ui/Button';
 
+import { useSystemStatus } from '../hooks/useSystemStatus';
+import { ServiceStatusBadge } from '../components/ServiceStatusBadge';
+
 const evaluationSchema = z.object({
   user_id: z.string().min(1, 'Identify the user'),
   flag_name: z.string().min(1, 'Target flag name is required'),
@@ -18,6 +21,7 @@ type EvaluationFormData = z.infer<typeof evaluationSchema>;
 
 const EvaluationPage: React.FC = () => {
   const { evaluate, isEvaluating, error, result } = useEvaluation();
+  const { status } = useSystemStatus();
 
   const {
     register,
@@ -39,11 +43,17 @@ const EvaluationPage: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-1000">
       <header>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 text-emerald-500">
-            <PlayCircle className="w-6 h-6" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 text-emerald-500">
+              <PlayCircle className="w-6 h-6" />
+            </div>
+            <h2 className="text-3xl font-extrabold italic">Evaluation API (Hot Path)</h2>
           </div>
-          <h2 className="text-3xl font-extrabold italic">Evaluation API (Hot Path)</h2>
+          <ServiceStatusBadge
+            status={status.evaluation}
+            className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5"
+          />
         </div>
         <p className="text-text-secondary max-w-3xl leading-relaxed">
           Este é o motor do ToggleMaster. Desenvolvido em Go para máxima performance, este endpoint

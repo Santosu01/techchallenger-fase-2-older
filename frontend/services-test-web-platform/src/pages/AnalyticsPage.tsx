@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { BarChart3, Activity, Database, Cloud, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { useSystemStatus } from '../hooks/useSystemStatus';
+import { ServiceStatusBadge } from '../components/ServiceStatusBadge';
 
 const AnalyticsPage: React.FC = () => {
   const { health, isLoading, refetch } = useAnalytics();
+  const { status } = useSystemStatus();
   const [lastCheck, setLastCheck] = useState<string>('--:--:--');
 
   React.useEffect(() => {
@@ -25,12 +28,18 @@ const AnalyticsPage: React.FC = () => {
   return (
     <div className="space-y-8 animate-in zoom-in-95 duration-500">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/30 text-amber-500">
-              <BarChart3 className="w-6 h-6" />
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/30 text-amber-500">
+                <BarChart3 className="w-6 h-6" />
+              </div>
+              <h2 className="text-3xl font-extrabold italic">Analytics Worker Service</h2>
             </div>
-            <h2 className="text-3xl font-extrabold italic">Analytics Worker Service</h2>
+            <ServiceStatusBadge
+              status={status.analytics}
+              className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5"
+            />
           </div>
           <p className="text-text-secondary max-w-2xl leading-relaxed">
             O Worker de Analytics processa eventos de avaliação de forma assíncrona. Ele escuta a
@@ -38,30 +47,18 @@ const AnalyticsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="glass px-6 py-4 rounded-3xl border border-white/5 flex items-center gap-6">
-          <div className="text-right">
-            <span className="text-[10px] text-text-secondary uppercase tracking-widest font-bold block mb-1">
-              Status do Worker
-            </span>
-            <div className="flex items-center gap-2 justify-end">
-              <div
-                className={`w-2 h-2 rounded-full ${health?.status === 'ok' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}
-              />
-              <span
-                className={`text-sm font-bold ${health?.status === 'ok' ? 'text-emerald-400' : 'text-rose-400'}`}
-              >
-                {health?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
-              </span>
-            </div>
-          </div>
+        <div className="glass px-6 py-4 rounded-3xl border border-white/5 flex items-center gap-4">
           <button
             onClick={handleRefresh}
             disabled={isLoading}
-            className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/10"
+            className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/10 w-full justify-center"
           >
             <RefreshCw
               className={`w-5 h-5 text-text-secondary ${isLoading ? 'animate-spin' : ''}`}
             />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">
+              Refresh Worker Status
+            </span>
           </button>
         </div>
       </header>
